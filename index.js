@@ -1,6 +1,6 @@
 const chalk = require("chalk");
 
-const day = 5;
+const day = 6;
 console.log(chalk.bgBlue(`** Running day ${day} **`));
 
 module.exports = require(`./${String(day).padStart(2, "0")}/`);
