@@ -5,6 +5,7 @@ const puzzleInput = fs
   .toString()
   .split(",")
   .map(i => Number(i));
+const IntCode = require("../intCode");
 
 console.log(chalk.yellow("** Part 1 **"));
 
@@ -88,137 +89,6 @@ const testCases = [
   ]
 ];
 
-const intCode = (instructions, index = 0, inputValue, outputValue) => {
-  const instruction = instructions[index + 0];
-  const opCode = instruction % 100;
-  const parameterModes = String(Math.floor(instruction / 100))
-    .padStart(3, "0")
-    .split("")
-    .map(Number);
-
-  const parameters = [];
-  parameters[0] = parameterModes[2]
-    ? instructions[index + 1]
-    : instructions[instructions[index + 1]];
-  parameters[1] = parameterModes[1]
-    ? instructions[index + 2]
-    : instructions[instructions[index + 2]];
-  parameters[2] = parameterModes[1]
-    ? instructions[index + 3]
-    : instructions[instructions[index + 3]];
-
-  // console.log(instructions);
-
-  // console.log(
-  //   `Opcode: ${opCode}, parameter modes: ${parameterModes.join(
-  //     ", "
-  //   )}, parameters: ${parameters.join(", ")}`
-  // );
-
-  if (opCode === 1) {
-    const replaceValue = parameters[0] + parameters[1];
-    const newInstructions = [
-      ...instructions.slice(0, instructions[index + 3]),
-      replaceValue,
-      ...instructions.slice(instructions[index + 3] + 1)
-    ];
-    // console.log(`Stored ${replaceValue} @ ${instructions[index + 3]}`);
-    return intCode(newInstructions, index + 4, inputValue, outputValue);
-  }
-  if (opCode === 2) {
-    const replaceValue = parameters[0] * parameters[1];
-    const newInstructions = [
-      ...instructions.slice(0, instructions[index + 3]),
-      replaceValue,
-      ...instructions.slice(instructions[index + 3] + 1)
-    ];
-    // console.log(`Stored ${replaceValue} @ ${instructions[index + 3]}`);
-    return intCode(newInstructions, index + 4, inputValue, outputValue);
-  }
-  if (opCode === 3) {
-    if (inputValue[0] === undefined) {
-      // If we're waiting for an input value, we can suspend
-      // a suspend is found by checking result.__suspended
-      // A suspend can be resumed (with new inputs) by calling
-      // result.next([newInputs]);
-      return {
-        outputValue,
-        __suspended: true,
-        next: nextInputs => {
-          const newInstructions = [
-            ...instructions.slice(0, instructions[index + 1]),
-            nextInputs[0],
-            ...instructions.slice(instructions[index + 1] + 1)
-          ];
-          return intCode(
-            newInstructions,
-            index + 2,
-            nextInputs.slice(1),
-            outputValue
-          );
-        }
-      };
-    }
-    const newInstructions = [
-      ...instructions.slice(0, instructions[index + 1]),
-      inputValue[0],
-      ...instructions.slice(instructions[index + 1] + 1)
-    ];
-    // console.log(`Stored ${inputValue} @ ${instructions[index + 1]}`);
-    return intCode(
-      newInstructions,
-      index + 2,
-      inputValue.slice(1),
-      outputValue
-    );
-  }
-  if (opCode === 4) {
-    const newOutputValue = parameters[0];
-    // console.log(chalk.bold(`Outputted ${newOutputValue}`));
-    return intCode(instructions, index + 2, inputValue, newOutputValue);
-  }
-  if (opCode === 5) {
-    if (parameters[0] !== 0) {
-      // console.log("Parameter is true, jumping");
-      return intCode(instructions, parameters[1], inputValue, outputValue);
-    } else {
-      return intCode(instructions, index + 3, inputValue, outputValue);
-    }
-  }
-  if (opCode === 6) {
-    if (parameters[0] === 0) {
-      // console.log("Parameter is false, jumping");
-      return intCode(instructions, parameters[1], inputValue, outputValue);
-    } else {
-      return intCode(instructions, index + 3, inputValue, outputValue);
-    }
-  }
-  if (opCode === 7) {
-    const inputValue = parameters[0] < parameters[1] ? 1 : 0;
-    const newInstructions = [
-      ...instructions.slice(0, instructions[index + 3]),
-      inputValue,
-      ...instructions.slice(instructions[index + 3] + 1)
-    ];
-    // console.log(`Stored ${inputValue} @ ${instructions[index + 3]}`);
-    return intCode(newInstructions, index + 4, inputValue, outputValue);
-  }
-  if (opCode === 8) {
-    const inputValue = parameters[0] === parameters[1] ? 1 : 0;
-    const newInstructions = [
-      ...instructions.slice(0, instructions[index + 3]),
-      inputValue,
-      ...instructions.slice(instructions[index + 3] + 1)
-    ];
-    // console.log(`Stored ${inputValue} @ ${instructions[index + 3]}`);
-    return intCode(newInstructions, index + 4, inputValue, outputValue);
-  }
-  if (opCode === 99) {
-    return outputValue;
-  }
-  // console.log(`Unknown opcode ${opCode}`);
-};
-
 const main = code => {
   let maxOutput = 0;
   let bestCombination = null;
@@ -238,11 +108,26 @@ const main = code => {
                       ![ampAInput, ampBInput, ampCInput, ampDInput].includes(i)
                   )
                   .forEach(ampEInput => {
-                    const outputA = intCode(code, 0, [ampAInput, 0]);
-                    const outputB = intCode(code, 0, [ampBInput, outputA]);
-                    const outputC = intCode(code, 0, [ampCInput, outputB]);
-                    const outputD = intCode(code, 0, [ampDInput, outputC]);
-                    const outputE = intCode(code, 0, [ampEInput, outputD]);
+                    const machineA = new IntCode(code);
+                    machineA.addInputs([ampAInput, 0]);
+                    const outputA = machineA.run();
+
+                    const machineB = new IntCode(code);
+                    machineB.addInputs([ampBInput, outputA]);
+                    const outputB = machineB.run();
+
+                    const machineC = new IntCode(code);
+                    machineC.addInputs([ampCInput, outputB]);
+                    const outputC = machineC.run();
+
+                    const machineD = new IntCode(code);
+                    machineD.addInputs([ampDInput, outputC]);
+                    const outputD = machineD.run();
+
+                    const machineE = new IntCode(code);
+                    machineE.addInputs([ampEInput, outputD]);
+                    const outputE = machineE.run();
+
                     if (outputE > maxOutput) {
                       maxOutput = outputE;
                       bestCombination = [
@@ -403,34 +288,50 @@ const main2 = code => {
                     let inputA = 0;
                     // Store our suspendable machines in an array
                     const machines = [];
-                    machines.push(intCode(code, 0, [ampAInput, inputA]));
-                    machines.push(
-                      intCode(code, 0, [ampBInput, machines[0].outputValue])
-                    );
-                    machines.push(
-                      intCode(code, 0, [ampCInput, machines[1].outputValue])
-                    );
-                    machines.push(
-                      intCode(code, 0, [ampDInput, machines[2].outputValue])
-                    );
-                    machines.push(
-                      intCode(code, 0, [ampEInput, machines[3].outputValue])
-                    );
+                    machines.push(new IntCode(code));
+                    machines[0].addInputs([ampAInput, inputA]);
+                    machines[0].run();
+
+                    machines.push(new IntCode(code));
+                    machines[1].addInputs([
+                      ampBInput,
+                      machines[0].getMostRecentOutput()
+                    ]);
+                    machines[1].run();
+
+                    machines.push(new IntCode(code));
+                    machines[2].addInputs([
+                      ampCInput,
+                      machines[1].getMostRecentOutput()
+                    ]);
+                    machines[2].run();
+
+                    machines.push(new IntCode(code));
+                    machines[3].addInputs([
+                      ampDInput,
+                      machines[2].getMostRecentOutput()
+                    ]);
+                    machines[3].run();
+
+                    machines.push(new IntCode(code));
+                    machines[4].addInputs([
+                      ampEInput,
+                      machines[3].getMostRecentOutput()
+                    ]);
+                    machines[4].run();
 
                     while (inLoop) {
+                      let returnValue = null;
                       machines.forEach((machine, ix) => {
                         const machineInput = machines[ix === 0 ? 4 : ix - 1];
 
-                        machines[ix] = machine.next([
-                          machineInput.__suspended
-                            ? machineInput.outputValue
-                            : machineInput
-                        ]);
+                        machine.addInputs([machineInput.getMostRecentOutput()]);
+                        returnValue = machine.run();
                       });
-                      if (!machines[4].__suspended) {
+                      if (returnValue) {
                         inLoop = false;
-                        if (machines[4] > maxOutput) {
-                          maxOutput = machines[4];
+                        if (returnValue > maxOutput) {
+                          maxOutput = returnValue;
                           bestCombination = [
                             ampAInput,
                             ampBInput,

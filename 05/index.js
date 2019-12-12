@@ -5,115 +5,19 @@ const puzzleInput = fs
   .toString()
   .split(",")
   .map(i => Number(i));
+const IntCode = require("../intCode");
 
 console.log(chalk.yellow("** Part 1 **"));
 
-const main = (instructions, index = 0, inputValue, outputValue) => {
-  const instruction = instructions[index + 0];
-  const opCode = instruction % 100;
-  const parameterModes = String(Math.floor(instruction / 100))
-    .padStart(3, "0")
-    .split("")
-    .map(Number);
-
-  const parameters = [];
-  parameters[0] = parameterModes[2]
-    ? instructions[index + 1]
-    : instructions[instructions[index + 1]];
-  parameters[1] = parameterModes[1]
-    ? instructions[index + 2]
-    : instructions[instructions[index + 2]];
-  parameters[2] = parameterModes[1]
-    ? instructions[index + 3]
-    : instructions[instructions[index + 3]];
-
-  // console.log(instructions);
-
-  console.log(
-    `Opcode: ${opCode}, parameter modes: ${parameterModes.join(
-      ", "
-    )}, parameters: ${parameters.join(", ")}`
-  );
-
-  if (opCode === 1) {
-    const replaceValue = parameters[0] + parameters[1];
-    const newInstructions = [
-      ...instructions.slice(0, instructions[index + 3]),
-      replaceValue,
-      ...instructions.slice(instructions[index + 3] + 1)
-    ];
-    console.log(`Stored ${replaceValue} @ ${instructions[index + 3]}`);
-    return main(newInstructions, index + 4, inputValue, outputValue);
-  }
-  if (opCode === 2) {
-    const replaceValue = parameters[0] * parameters[1];
-    const newInstructions = [
-      ...instructions.slice(0, instructions[index + 3]),
-      replaceValue,
-      ...instructions.slice(instructions[index + 3] + 1)
-    ];
-    console.log(`Stored ${replaceValue} @ ${instructions[index + 3]}`);
-    return main(newInstructions, index + 4, inputValue, outputValue);
-  }
-  if (opCode === 3) {
-    const newInstructions = [
-      ...instructions.slice(0, instructions[index + 1]),
-      inputValue,
-      ...instructions.slice(instructions[index + 1] + 1)
-    ];
-    console.log(`Stored ${inputValue} @ ${instructions[index + 1]}`);
-    return main(newInstructions, index + 2, inputValue, outputValue);
-  }
-  if (opCode === 4) {
-    const newOutputValue = parameters[0];
-    console.log(chalk.bold(`Outputted ${newOutputValue}`));
-    return main(instructions, index + 2, inputValue, newOutputValue);
-  }
-  if (opCode === 5) {
-    if (parameters[0] !== 0) {
-      console.log("Parameter is true, jumping");
-      return main(instructions, parameters[1], inputValue, outputValue);
-    } else {
-      return main(instructions, index + 3, inputValue, outputValue);
-    }
-  }
-  if (opCode === 6) {
-    if (parameters[0] === 0) {
-      console.log("Parameter is false, jumping");
-      return main(instructions, parameters[1], inputValue, outputValue);
-    } else {
-      return main(instructions, index + 3, inputValue, outputValue);
-    }
-  }
-  if (opCode === 7) {
-    const inputValue = parameters[0] < parameters[1] ? 1 : 0;
-    const newInstructions = [
-      ...instructions.slice(0, instructions[index + 3]),
-      inputValue,
-      ...instructions.slice(instructions[index + 3] + 1)
-    ];
-    console.log(`Stored ${inputValue} @ ${instructions[index + 3]}`);
-    return main(newInstructions, index + 4, inputValue, outputValue);
-  }
-  if (opCode === 8) {
-    const inputValue = parameters[0] === parameters[1] ? 1 : 0;
-    const newInstructions = [
-      ...instructions.slice(0, instructions[index + 3]),
-      inputValue,
-      ...instructions.slice(instructions[index + 3] + 1)
-    ];
-    console.log(`Stored ${inputValue} @ ${instructions[index + 3]}`);
-    return main(newInstructions, index + 4, inputValue, outputValue);
-  }
-  if (opCode === 99) {
-    return outputValue;
-  }
-  console.log(`Unknown opcode ${opCode}`);
+const main = (code, input) => {
+  const intCode = new IntCode(code);
+  intCode.addInputs([input]);
+  return intCode.run();
 };
 
 console.log(chalk.blue("** Calculating **"));
 
-const result = main(puzzleInput, 0, 1);
+const result = main(puzzleInput, 1);
 
 console.log(chalk.bgMagenta(`Result: ${result}`));
 
@@ -303,7 +207,7 @@ console.log(chalk.blue("** Running test cases **"));
 testCases2.forEach(([instructions, input, output], ix) => {
   console.log(chalk.blue(`** Test case ${ix + 1} **`));
   console.log(`Input: ${instructions}. Input value: ${input}`);
-  const answer = main(instructions, 0, input);
+  const answer = main(instructions, input);
   console.log(`Output: ${answer}`);
   console.log(`Expected: ${output}`);
   if (answer !== output) {
@@ -314,6 +218,6 @@ testCases2.forEach(([instructions, input, output], ix) => {
 
 console.log(chalk.blue("** Calculating **"));
 
-const result2 = main(puzzleInput, 0, 5);
+const result2 = main(puzzleInput, 5);
 
 console.log(chalk.bgMagenta(`Result: ${result2}`));

@@ -5,6 +5,7 @@ const puzzleInput = fs
   .toString()
   .split(",")
   .map(i => Number(i));
+const IntCode = require("../intCode");
 
 console.log(chalk.yellow("** Part 1 **"));
 
@@ -31,36 +32,10 @@ const testCases = [
   ]
 ];
 
-const main = (input, start = 0) => {
-  const opCode = input[start + 0];
-  const firstIndex = input[start + 1];
-  const secondIndex = input[start + 2];
-  const outputIndex = input[start + 3];
-  if (opCode === 1) {
-    console.log("Opcode 1, adding");
-    const replaceValue = input[firstIndex] + input[secondIndex];
-    const newInput = [
-      ...input.slice(0, outputIndex),
-      replaceValue,
-      ...input.slice(outputIndex + 1)
-    ];
-    return main(newInput, start + 4);
-  }
-  if (opCode === 2) {
-    console.log("Opcode 2, multiplying");
-    const replaceValue = input[firstIndex] * input[secondIndex];
-    const newInput = [
-      ...input.slice(0, outputIndex),
-      replaceValue,
-      ...input.slice(outputIndex + 1)
-    ];
-    return main(newInput, start + 4);
-  }
-  if (opCode === 99) {
-    console.log("Opcode 99, completing");
-    return input;
-  }
-  console.log(`Unknown opcode ${opCode}`);
+const main = input => {
+  const intCode = new IntCode(input);
+  intCode.run();
+  return intCode.memory;
 };
 
 console.log(chalk.blue("** Running test cases **"));
