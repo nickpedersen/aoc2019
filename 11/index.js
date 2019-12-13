@@ -70,7 +70,3 @@ console.log(
     )
     .join("\n")
 );
-
-// const [result2, intCode2] = main(puzzleInput, [2]);
-// console.log(intCode2.output[0]);
-// console.log(chalk.bgMagenta(`Result: ${intCode2.output[0]}`));
