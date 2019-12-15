@@ -276,4 +276,8 @@ module.exports = class IntCode {
   getMostRecentOutput = () => {
     return this.output[this.output.length - 1];
   };
+
+  clearOuput = () => {
+    this.output = [];
+  };
 };
