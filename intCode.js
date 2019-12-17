@@ -1,15 +1,22 @@
 const chalk = require("chalk");
 
 module.exports = class IntCode {
-  constructor(code) {
+  constructor(
+    code,
+    { index, relativeBase, inputs, output, running, completed } = {}
+  ) {
     this.memory = code.slice();
-    this.index = 0;
-    this.relativeBase = 0;
-    this.inputs = [];
-    this.output = [];
-    this.running = false;
-    this.completed = false;
+    this.index = index || 0;
+    this.relativeBase = relativeBase || 0;
+    this.inputs = inputs || [];
+    this.output = output || [];
+    this.running = running || false;
+    this.completed = completed || false;
   }
+
+  clone = () => {
+    return new IntCode(this.memory, this);
+  };
 
   opCodes = {
     1: {
